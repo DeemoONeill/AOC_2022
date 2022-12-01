@@ -72,8 +72,10 @@ defmodule Recursive_elves do
   end
 end
 
+# part 1
 Recursive_elves.calculate("./puzzle.input")
 |> IO.puts()
 
+# part 2
 Recursive_elves.calculate("./puzzle.input", 3)
 |> IO.puts()
