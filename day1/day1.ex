@@ -1,4 +1,12 @@
 defmodule Calories do
+  def calculate(filename, n_elves \\ 1) do
+    File.read!(filename)
+    |> parse_input()
+    |> top_elves(n_elves)
+    |> Enum.sum()
+    |> IO.inspect()
+  end
+
   def parse_input(input) do
     input
     |> split_elves
@@ -31,34 +39,41 @@ defmodule Calories do
 end
 
 # part 1
-File.read!("./puzzle.input")
-|> Calories.parse_input()
-|> Calories.top_elves()
-|> Enum.sum()
-|> IO.inspect()
+Calories.calculate("./puzzle.input")
 
 # part 2
-File.read!("./puzzle.input")
-|> Calories.parse_input()
-|> Calories.top_elves(3)
-|> Enum.sum()
-|> IO.inspect()
+Calories.calculate("./puzzle.input", 3)
 
-# using one "anonymous" function
-pipeline = fn n ->
-  File.read!("./puzzle.input")
-  |> String.split("\n\n")
-  |> Enum.map(
-    &(for num <- String.split(&1) do
-        String.to_integer(num)
-      end
-      |> Enum.sum())
-  )
-  |> Enum.sort(:desc)
-  |> Enum.take(n)
-  |> Enum.sum()
-  |> IO.inspect()
+defmodule Recursive_elves do
+  def calculate(filename, n \\ 1) do
+    parse_input(filename)
+    |> top_elves(n)
+    |> Enum.sum()
+  end
+
+  def parse_input(filename) do
+    file = File.open!(filename)
+    sum_elves(IO.read(file, :line), file, 0, [])
+  end
+
+  defp sum_elves(:eof, _file, current, acc), do: [current | acc]
+
+  defp sum_elves(line, file, current, acc) do
+    case Integer.parse(line) do
+      {num, _} -> sum_elves(IO.read(file, :line), file, current + num, acc)
+      :error -> sum_elves(IO.read(file, :line), file, 0, [current | acc])
+    end
+  end
+
+  def top_elves(elves, n \\ 1) do
+    elves
+    |> Enum.sort(:desc)
+    |> Enum.take(n)
+  end
 end
 
-pipeline.(1)
-pipeline.(3)
+Recursive_elves.calculate("./puzzle.input")
+|> IO.puts()
+
+Recursive_elves.calculate("./puzzle.input", 3)
+|> IO.puts()
