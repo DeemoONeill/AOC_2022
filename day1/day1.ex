@@ -11,16 +11,15 @@ defmodule Calories do
   end
 
   defp convert_to_int(calories) do
-    calories
-    |> Enum.map(
-      &(String.split(&1, "\n")
-        |> Enum.map(fn num -> String.to_integer(num) end))
-    )
+    # equivalent to [map(int, calorie) for calorie in map(str.split, calories)]
+    for calorie <- Stream.map(calories, &String.split/1) do
+      Stream.map(calorie, &String.to_integer/1)
+    end
   end
 
   defp sum_elf(elf) do
     elf
-    |> Enum.map(&Enum.sum/1)
+    |> Stream.map(&Enum.sum/1)
   end
 
   def top_elves(elves, n \\ 1) do
@@ -44,3 +43,22 @@ File.read!("./puzzle.input")
 |> Calories.top_elves(3)
 |> Enum.sum()
 |> IO.inspect()
+
+# using one "anonymous" function
+pipeline = fn n ->
+  File.read!("./puzzle.input")
+  |> String.split("\n\n")
+  |> Enum.map(
+    &(for num <- String.split(&1) do
+        String.to_integer(num)
+      end
+      |> Enum.sum())
+  )
+  |> Enum.sort(:desc)
+  |> Enum.take(n)
+  |> Enum.sum()
+  |> IO.inspect()
+end
+
+pipeline.(1)
+pipeline.(3)
