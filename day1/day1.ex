@@ -23,29 +23,24 @@ defmodule Calories do
     |> Enum.map(&Enum.sum/1)
   end
 
-  def top_elf(elves) do
+  def top_elves(elves, n \\ 1) do
     elves
     |> sum_elf
-    |> Enum.max()
-  end
-
-  def top_three(elves) do
-    elves
-    |> sum_elf()
     |> Enum.sort(:desc)
-    |> Enum.take(3)
+    |> Enum.take(n)
   end
 end
 
 # part 1
 File.read!("./puzzle.input")
 |> Calories.parse_input()
-|> Calories.top_elf()
-|> IO.puts()
+|> Calories.top_elves()
+|> Enum.sum()
+|> IO.inspect()
 
 # part 2
 File.read!("./puzzle.input")
 |> Calories.parse_input()
-|> Calories.top_three()
+|> Calories.top_elves(3)
 |> Enum.sum()
 |> IO.inspect()
