@@ -9,9 +9,7 @@ defmodule Rock_Paper_Scissors do
   end
 
   def score_lines(lines, scores_matrix) do
-    for line <- lines do
-      scores_matrix[String.trim(line)]
-    end
+    for line <- lines, do: scores_matrix[String.trim(line)]
   end
 end
 
