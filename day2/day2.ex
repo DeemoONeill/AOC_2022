@@ -10,22 +10,22 @@ defmodule Rocker_Paper_Scissors do
 
   def score_lines(lines, scores_matrix) do
     for line <- lines do
-      scores_matrix[String.split(line)|>List.to_tuple()]
+      scores_matrix[String.trim(line)]
     end
   end
 end
 
 
 part_1_scores_matrix = %{
-  {"A", "X"} => 4, {"B", "X"} => 1, {"C", "X"} => 7,
-  {"A", "Y"} => 8, {"B", "Y"} => 5, {"C", "Y"} => 2,
-  {"A", "Z"} => 3, {"B", "Z"} => 9, {"C", "Z"} => 6,
+  "A X" => 4, "B X" => 1, "C X" => 7,
+  "A Y" => 8, "B Y" => 5, "C Y" => 2,
+  "A Z" => 3, "B Z" => 9, "C Z" => 6,
 }
 
 part_2_scores_matrix = %{
-  {"A", "X"} => 3, {"B", "X"} => 1, {"C", "X"} => 2,
-  {"A", "Y"} => 4, {"B", "Y"} => 5, {"C", "Y"} => 6,
-  {"A", "Z"} => 8, {"B", "Z"} => 9, {"C", "Z"} => 7,
+  "A X" => 3, "B X" => 1, "C X" => 2,
+  "A Y" => 4, "B Y" => 5, "C Y" => 6,
+  "A Z" => 8, "B Z" => 9, "C Z" => 7,
 }
 
 # part 1
