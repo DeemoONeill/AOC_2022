@@ -31,4 +31,4 @@ if __name__ == "__main__":
         puzzle_lines = f.readlines()
 
     print("part1:", part1(puzzle_lines))
-    print("part2:", part1(puzzle_lines))
+    print("part2:", part2(puzzle_lines))
