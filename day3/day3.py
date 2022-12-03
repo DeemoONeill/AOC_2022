@@ -1,6 +1,6 @@
 import string
 
-scores = {letter: score for score, letter in enumerate(string.ascii_letters, 1)}
+SCORES = dict(zip(string.ascii_letters, range(1, 100)))
 
 
 def split_strings(row):
@@ -16,17 +16,19 @@ def intersections(*tups):
     return first.pop()
 
 
-with open("puzzle.input") as f:
-    print(
-        "part1:",
-        sum(scores[intersections(*tup)] for tup in map(split_strings, f.readlines())),
-    )
+def part1(puzzle_lines):
+    return sum(SCORES[intersections(*tup)] for tup in map(split_strings, puzzle_lines))
 
 
-with open("puzzle.input") as f:
-    lines = [line.strip() for line in f.readlines()]
+def part2(puzzle_lines):
+    lines = [line.strip() for line in puzzle_lines]
     zipped = zip(lines[::3], lines[1::3], lines[2::3])
-    print(
-        "part2:",
-        sum(scores[intersections(*tup)] for tup in zipped),
-    )
+    return sum(SCORES[intersections(*tup)] for tup in zipped)
+
+
+if __name__ == "__main__":
+    with open("puzzle.input") as f:
+        puzzle_lines = f.readlines()
+
+    print("part1:", part1(puzzle_lines))
+    print("part2:", part1(puzzle_lines))
