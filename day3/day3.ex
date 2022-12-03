@@ -81,10 +81,9 @@ defmodule Rucksack do
   end
 
 
-  defp find_intersection(mapsets) do
+  defp find_intersection([first, second | tail]) do
     #  Finds the intersection between mapsets
-    [head, second | tail] = mapsets
-    find_intersection(tail, MapSet.intersection(head, second))
+    find_intersection(tail, MapSet.intersection(first, second))
   end
 
   defp find_intersection([], acc), do: acc
