@@ -28,13 +28,11 @@ defmodule Rucksack do
     File.stream!(filename)
   end
 
-  @doc """
-  given a generator of lines, returns the priority of the intersection of each line
-  """
   defp calculate_line_priority(lines) do
+    # given a generator of lines, returns the priority of the intersection of each line
     for line <- lines do
       line
-      |> to_charlist()
+      |>strip_to_charlist()
       |> split_line_in_half()
       |> find_intersection()
       |> calculate_priority()
@@ -45,12 +43,12 @@ defmodule Rucksack do
     for line <- lines do
       MapSet.new(
         line
-        |> to_charlist()
+        |>strip_to_charlist()
       )
     end
   end
 
-  defp to_charlist(line) do
+  defp strip_to_charlist(line) do
     line
     |> String.trim()
     |> String.to_charlist()
@@ -82,17 +80,16 @@ defmodule Rucksack do
     end
   end
 
-  @doc """
-  Finds the intersection between 2 or 3 mapsets
-    This could be generalised to any list list of mapsets
-  """
-  defp find_intersection([mapset1, mapset2]) do
-    MapSet.intersection(mapset1, mapset2)
+
+  defp find_intersection(mapsets) do
+    #  Finds the intersection between mapsets
+    [head, second | tail] = mapsets
+    find_intersection(tail, MapSet.intersection(head, second))
   end
 
-  defp find_intersection([mapset1, mapset2, mapset3]) do
-    MapSet.intersection(mapset1, mapset2)
-    |> MapSet.intersection(mapset3)
+  defp find_intersection([], acc), do: acc
+  defp find_intersection([head|tail], acc) do
+    find_intersection(tail, MapSet.intersection(head, acc))
   end
 end
 
