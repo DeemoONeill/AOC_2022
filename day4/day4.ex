@@ -23,8 +23,8 @@ defmodule Assignments do
     (start1 >= start2 and end1 <= end2) or (start1 <= start2 and end1 >= end2)
   end
 
-  def overlaps?([[start1, end1], [start2, end2]] = row) do
-    contains?(row) or (end1 >= start2 and end1 <= end2) or (end2 >= start1 and end2 <= end1)
+  def overlaps?([[start1, end1], [start2, end2]]) do
+     (end1 >= start2 and end1 <= end2) or (end2 >= start1 and end2 <= end1)
   end
 end
 
