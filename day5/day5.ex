@@ -39,22 +39,29 @@ defmodule Crates do
     |> Enum.filter(&is_integer/1)
   end
 
-  def apply_instructions(instructions, crates) do
+  def apply_instructions(instructions, crates, func) do
     for instruction <- instructions, reduce: crates do
-      acc -> instruction |> move_crates(acc)
+      acc -> instruction |> func.(acc)
     end
   end
 
-  def move_crates([], crates), do: crates
-  def move_crates([0, _from, _to], crates), do: crates
+  def crate_mover9000([], crates), do: crates
+  def crate_mover9000([0, _from, _to], crates), do: crates
 
-  def move_crates([quantity, from, to], crates) do
+  def crate_mover9000([quantity, from, to], crates) do
     [from_item | tail] = crates[from]
 
     to_list = [from_item | crates[to]]
 
     [-1 + quantity, from, to]
-    |> move_crates(%{crates | from => tail, to => to_list})
+    |> crate_mover9000(%{crates | from => tail, to => to_list})
+  end
+
+  def crate_mover9001([], crates), do: crates
+  def crate_mover9001([quantity, from, to], crates) do
+    {from_item, tail} = Enum.split(crates[from],quantity)
+    to_list = [from_item | crates[to]] |> List.flatten()
+    %{crates | from => tail, to => to_list}
   end
 
   def top_crate(crates) do
@@ -68,7 +75,15 @@ end
 "puzzle.input"
 |> File.stream!()
 |> Enum.map(&Crates.parse_instructions/1)
-|> Crates.apply_instructions(input_crates)
+|> Crates.apply_instructions(input_crates, &Crates.crate_mover9000/2)
+|> Crates.top_crate()
+|> Enum.join()
+|> IO.inspect()
+
+"puzzle.input"
+|> File.stream!()
+|> Enum.map(&Crates.parse_instructions/1)
+|> Crates.apply_instructions(input_crates, &Crates.crate_mover9001/2)
 |> Crates.top_crate()
 |> Enum.join()
 |> IO.inspect()
