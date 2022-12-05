@@ -1,7 +1,4 @@
 defmodule Crates do
-  @doc """
-  returns a list of instructions which are lists of [quantity, from, to]
-  """
   def parse_crates(input_stream) do
     input_stream
     |> Enum.filter(&String.starts_with?(&1, "["))
@@ -32,11 +29,7 @@ defmodule Crates do
         Map.put(map, index, [crate])
 
       list ->
-        if crate != " " do
-          %{map | index => [crate | list]}
-        else
-          map
-        end
+        if crate != " ", do: %{map | index => [crate | list]}, else: map
     end
   end
 
@@ -90,18 +83,10 @@ defmodule Crates do
     end
   end
 
-  def part1(puzzle_input) do
+  def solve(puzzle_input, moving_func) do
     puzzle_input
     |> Enum.map(&parse_instructions/1)
-    |> apply_instructions(puzzle_input |> parse_crates, &crate_mover9000/2)
-    |> top_crates()
-    |> Enum.join()
-  end
-
-  def part2(puzzle_input) do
-    puzzle_input
-    |> Enum.map(&parse_instructions/1)
-    |> apply_instructions(puzzle_input |> parse_crates, &crate_mover9001/2)
+    |> apply_instructions(puzzle_input |> parse_crates, moving_func)
     |> top_crates()
     |> Enum.join()
   end
@@ -113,9 +98,9 @@ puzzle_input =
   |> String.split("\n")
 
 puzzle_input
-|> Crates.part1()
+|> Crates.solve(&Crates.crate_mover9000/2)
 |> IO.puts()
 
 puzzle_input
-|> Crates.part2()
+|> Crates.solve(&Crates.crate_mover9001/2)
 |> IO.puts()
