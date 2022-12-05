@@ -1,31 +1,45 @@
-input_crates = %{
-  1 => ["V", "N", "F", "S", "M", "P", "H", "J"],
-  2 => ["Q", "D", "J", "M", "L", "R", "S"],
-  3 => ["B", "W", "S", "C", "H", "D", "Q", "N"],
-  4 => ["L", "C", "S", "R"],
-  5 => ["B", "F", "P", "T", "V", "M"],
-  6 => ["C", "N", "Q", "R", "T"],
-  7 => ["R", "V", "G"],
-  8 => ["R", "L", "D", "P", "S", "Z", "C"],
-  9 => ["F", "B", "P", "G", "V", "J", "S", "D"]
-}
-
-sample_input = %{
-  1 => ["N", "Z"],
-  2 => ["D", "C", "M"],
-  3 => ["P"]
-}
-
-sample_instructions = "
-  move 1 from 2 to 1
-move 3 from 1 to 3
-move 2 from 2 to 1
-move 1 from 1 to 2"
-
 defmodule Crates do
   @doc """
   returns a list of instructions which are lists of [quantity, from, to]
   """
+  def parse_crates(input_stream) do
+    input_stream
+    |> Enum.filter(&String.starts_with?(&1, "["))
+    |> Enum.map(&String.graphemes/1)
+    |> Enum.map(fn strings ->
+      ["[" | tail] = strings
+      Enum.take_every(tail, 4)
+    end)
+    |> Enum.reverse()
+    |> to_map()
+  end
+
+  defp to_map(crates) do
+    for row <- crates, reduce: Map.new() do
+      acc -> row |> push_rows(acc)
+    end
+  end
+
+  defp push_rows(row, acc) do
+    for {crate, index} <- row |> Enum.with_index(1), reduce: acc do
+      acc -> update_map(acc, index, crate)
+    end
+  end
+
+  defp update_map(map, index, crate) do
+    case map |> Map.get(index, nil) do
+      nil ->
+        Map.put(map, index, [crate])
+
+      list ->
+        if crate != " " do
+          %{map | index => [crate | list]}
+        else
+          map
+        end
+    end
+  end
+
   def parse_instructions(instruction_string) do
     ~r"move (\d+) from (\d) to (\d)"
     |> Regex.scan(instruction_string)
@@ -70,26 +84,38 @@ defmodule Crates do
   end
 
   def top_crates(crates) do
-    for key <- Map.keys(crates) |> Enum.sort do
+    for key <- Map.keys(crates) |> Enum.sort() do
       crates[key]
       |> hd
     end
   end
+
+  def part1(puzzle_input) do
+    puzzle_input
+    |> Enum.map(&parse_instructions/1)
+    |> apply_instructions(puzzle_input |> parse_crates, &crate_mover9000/2)
+    |> top_crates()
+    |> Enum.join()
+  end
+
+  def part2(puzzle_input) do
+    puzzle_input
+    |> Enum.map(&parse_instructions/1)
+    |> apply_instructions(puzzle_input |> parse_crates, &crate_mover9001/2)
+    |> top_crates()
+    |> Enum.join()
+  end
 end
 
-before
-"puzzle.input"
-|> File.stream!()
-|> Enum.map(&Crates.parse_instructions/1)
-|> Crates.apply_instructions(input_crates, &Crates.crate_mover9000/2)
-|> Crates.top_crates()
-|> Enum.join()
+puzzle_input =
+  "puzzle.input"
+  |> File.read!()
+  |> String.split("\n")
+
+puzzle_input
+|> Crates.part1()
 |> IO.puts()
 
-"puzzle.input"
-|> File.stream!()
-|> Enum.map(&Crates.parse_instructions/1)
-|> Crates.apply_instructions(input_crates, &Crates.crate_mover9001/2)
-|> Crates.top_crates()
-|> Enum.join()
+puzzle_input
+|> Crates.part2()
 |> IO.puts()
