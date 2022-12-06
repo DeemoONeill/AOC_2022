@@ -2,10 +2,11 @@ defmodule Crates do
   def parse_crates(input_stream) do
     input_stream
     |> Enum.filter(&String.starts_with?(&1, "["))
-    |> Enum.map(&String.graphemes/1)
-    |> Enum.map(fn strings ->
-      ["[" | tail] = strings
-      Enum.take_every(tail, 4)
+    |> Stream.map(&String.graphemes/1)
+    |> Stream.map(fn strings ->
+      strings
+      |> tl
+      |> Enum.take_every(4)
     end)
     |> Enum.reverse()
     |> to_map()
@@ -37,7 +38,7 @@ defmodule Crates do
     ~r"move (\d+) from (\d) to (\d)"
     |> Regex.scan(instruction_string)
     |> List.flatten()
-    |> Enum.map(fn num ->
+    |> Stream.map(fn num ->
       case Integer.parse(num) do
         {int, ""} -> int
         :error -> :error
@@ -47,8 +48,9 @@ defmodule Crates do
   end
 
   def apply_instructions(instructions, crates, crate_mover) do
-    for instruction <- instructions, reduce: crates do
-      acc -> instruction |> crate_mover.(acc)
+    for {instruction, index} <- instructions |> Enum.with_index(), reduce: crates do
+      acc ->
+        instruction |> crate_mover.(acc)
     end
   end
 
@@ -85,7 +87,7 @@ defmodule Crates do
 
   def solve(puzzle_input, moving_func) do
     puzzle_input
-    |> Enum.map(&parse_instructions/1)
+    |> Stream.map(&parse_instructions/1)
     |> apply_instructions(puzzle_input |> parse_crates, moving_func)
     |> top_crates()
     |> Enum.join()
