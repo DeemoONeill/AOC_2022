@@ -1,13 +1,15 @@
 
-def unique_chars(chars, length):
-    return len(set(chars)) == length
+def unique_chars(chars):
+    """returns True when all chars passed are unique"""
+    return len(set(chars)) == len(chars)
 
 def slices(string, num):
+    """Returns a zip of a string offset by 1 num times"""
     return zip(*[string[i:] for i in range(num)])
 
 def find_unique(string, count):
     for i, chars in enumerate(slices(string, count), 1):
-        if unique_chars(chars, count):
+        if unique_chars(chars):
             return i+count-1
 
 if __name__ == "__main__":
