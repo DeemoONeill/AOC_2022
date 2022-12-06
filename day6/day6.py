@@ -8,9 +8,9 @@ def slices(string, num):
     return zip(*[string[i:] for i in range(num)])
 
 def find_unique(string, count):
-    for i, chars in enumerate(slices(string, count), 1):
+    for i, chars in enumerate(slices(string, count), count):
         if unique_chars(chars):
-            return i+count-1
+            return i 
 
 if __name__ == "__main__":
     with open("puzzle.input") as f:
