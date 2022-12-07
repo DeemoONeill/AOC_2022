@@ -1,118 +1,116 @@
-sample_input = "$ cd /
-$ ls
-dir a
-14848514 b.txt
-8504156 c.dat
-dir d
-$ cd a
-$ ls
-dir e
-29116 f
-2557 g
-62596 h.lst
-$ cd e
-$ ls
-584 i
-$ cd ..
-$ cd ..
-$ cd d
-$ ls
-4060174 j
-8033020 d.log
-5626152 d.ext
-7214296 k"
+defmodule FS do
+  use Agent
 
-test_map = %{
-  "/" => %{"a" => %{"e" => %{"i" => 584}, "b.txt" => 14_848_514}, "d" => %{"j" => 14_848_514}}
-}
-
-defmodule FileSystem do
-  def update_map(nil, [], input) do
-    Map.new([input])
+  def start_link(initial_value) do
+    Agent.start_link(fn -> initial_value end, name: __MODULE__)
   end
 
-  def update_map(map, [], {key, value} = input) do
-    # IO.inspect(map, label: "map")
-    # IO.inspect(input, label: "update input")
-
-    map
-    |> Map.put(key, value)
+  def value do
+    Agent.get(__MODULE__, & &1)
   end
 
-  def update_map(map, [cwd | path], input) do
-    %{map | cwd => update_map(map[cwd], path, input)}
+  def get(key) do
+    Agent.get(__MODULE__, &(&1 |> Map.get(key)))
   end
 
-  def sum_directories(map) do
-    for {key, value} <- map |> Map.to_list(), reduce: %{} do
-      acc ->
-        case {key, value} do
-          {k, v} when is_map(v) -> acc |> update_size(sum_directories(v, [k], acc))
-        end
-    end
-    |> IO.inspect()
-  end
-
-  def sum_directories(map, path, acc) do
-    for {key, value} <- map |> Map.to_list(), reduce: acc do
-      acc ->
-        case {key, value} do
-          {dir, contents} when is_map(contents) ->
-            update_size(acc, sum_directories(contents, [dir | path], acc))
-
-          {_, num} ->
-            acc
-            |> update_size(
-              for dir <- path do
-                {dir, num}
-              end
-              |> Map.new()
-            )
-        end
-    end
-  end
-
-  def update_size(map_to_update, map) do
-    for {key, value} <- map, reduce: %{} do
-      acc ->
-        num = acc |> Map.get(key, 0)
-
-        acc
-        |> Map.put(key, num + value)
-    end
+  def put(map, key) do
+    Agent.update(__MODULE__, &%{&1 | key => map})
   end
 end
 
-{_, file_system} =
-  for instruction <- String.split(sample_input, "\n"), reduce: {[], %{}} do
-    acc ->
-      {path, map} = acc
-
-      case instruction |> String.split() do
-        ["$", "cd", ".."] ->
-          {path |> tl, map}
-
-        ["$", "cd", dir] ->
-          {[dir | path], map |> FileSystem.update_map(path |> Enum.reverse(), {dir, %{}})}
-
-        ["$", "ls"] ->
-          {path, map}
-
-        ["dir", _folder] ->
-          {path, map}
-
-        [filesize, filename] ->
-          {path,
-           map
-           |> FileSystem.update_map(
-             path |> Enum.reverse(),
-             {filename, String.to_integer(filesize)}
-           )}
-
-        _ ->
-          {path, map}
-      end
+defmodule FileSystem do
+  def parse_instructions(instructions) do
+    instructions
+    |> Enum.map(&String.split/1)
+    |> Enum.reduce({"", %{}}, &parse_instruction/2)
+    |> elem(1)
   end
 
-file_system
-|> FileSystem.sum_directories()
+  def calculate_totals(file_tree) do
+    file_tree
+    |> FS.start_link()
+
+    sumdir("//")
+    FS.value()
+  end
+
+  def dirs_under_N_size(file_tree, n) do
+    file_tree
+    |> Map.to_list()
+    |> Enum.map(&(elem(&1, 1) |> Map.get("total")))
+    |> Enum.filter(&(&1 <= n))
+    |> Enum.sum()
+  end
+
+  def space_needed(file_tree, total_space, total_needed) do
+    space_used =
+      file_tree
+      |> Map.get("//")
+      |> Map.get("total")
+
+    total_needed - (total_space - space_used)
+  end
+
+  defp parse_instruction(["$", "cd", ".."], {path, map}) do
+    {path |> String.split("/") |> tl |> Enum.join("/"), map}
+  end
+
+  defp parse_instruction(["$", "cd", dir], {path, map}) do
+    cwd = dir <> "/" <> path
+    {cwd, Map.put(map, cwd, %{})}
+  end
+
+  defp parse_instruction(["$", "ls"], accumulator), do: accumulator
+
+  defp parse_instruction(["dir", folder], {cwd, map}) do
+    dir = Map.get(map, cwd, %{})
+
+    folders = [folder <> "/" <> cwd | Map.get(dir, "dirs", [])]
+
+    {cwd, Map.put(map, cwd, Map.put(dir, "dirs", folders))}
+  end
+
+  defp parse_instruction([filesize, _], {cwd, map}) do
+    dir = Map.get(map, cwd, %{})
+
+    files = [String.to_integer(filesize) | Map.get(dir, "files", [])]
+
+    {cwd, Map.put(map, cwd, Map.put(dir, "files", files))}
+  end
+
+  def sumdir(key) do
+    FS.get(key)
+    |> calc_total(key)
+  end
+
+  defp file_total(%{"total" => total}), do: total
+  defp file_total(%{"files" => list}), do: list |> Enum.sum()
+  defp file_total(_map), do: 0
+
+  defp dir_total(%{"total" => total}), do: total
+  defp dir_total(%{"dirs" => list}), do: list |> Enum.map(&sumdir/1) |> Enum.sum()
+  defp dir_total(_map), do: 0
+
+  defp calc_total(dir, key) do
+    total = file_total(dir) + dir_total(dir)
+    dir |> Map.put("total", total) |> FS.put(key)
+    total
+  end
+end
+
+# sample_input
+
+"puzzle.input"
+|> File.stream!()
+|> FileSystem.parse_instructions()
+|> FileSystem.calculate_totals()
+|> FileSystem.dirs_under_N_size(100_000)
+|> IO.inspect(label: "part 1")
+
+# part2
+
+FS.value()
+|> Enum.map(&(elem(&1, 1) |> Map.get("total")))
+|> Enum.filter(&(&1 >= FS.value() |> FileSystem.space_needed(70_000_000, 30_000_000)))
+|> Enum.min()
+|> IO.inspect(label: "part 2")
