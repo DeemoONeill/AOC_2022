@@ -30,7 +30,7 @@ defmodule FileSystem do
     file_tree
     |> FS.start_link()
 
-    sumdir("//")
+    sumdir("/")
     FS.value()
   end
 
@@ -45,7 +45,7 @@ defmodule FileSystem do
   def space_needed(file_tree, total_space, total_needed) do
     space_used =
       file_tree
-      |> Map.get("//")
+      |> Map.get("/")
       |> Map.get("total")
 
     total_needed - (total_space - space_used)
@@ -53,6 +53,10 @@ defmodule FileSystem do
 
   defp parse_instruction(["$", "cd", ".."], {path, map}) do
     {path |> String.split("/") |> tl |> Enum.join("/"), map}
+  end
+
+  defp parse_instruction(["$", "cd", "/"], {_path, map}) do
+    {"/", Map.put(map, "/", %{})}
   end
 
   defp parse_instruction(["$", "cd", dir], {path, map}) do
