@@ -1,69 +1,69 @@
 from copy import deepcopy
+from itertools import starmap
+from math import prod
 
 
-sample_input = """30373
-25512
-65332
-33549
-35390"""
-
-# with open("puzzle.input") as f:
-#     sample_input = f.read()
-
-grid = [list(map(int, line.strip())) for line in sample_input.split()]
-
-visible = deepcopy(grid)
-scores = deepcopy(grid)
-
-x_bounds = len(grid[0]) -1
-y_bounds = len(grid) - 1
-
-def slice_score(slice):
-    current_score = 1
+def slice_score(slice, height):
+    current_score = 0
     for tree in slice:
-        if tree < item:
+        if tree < height:
             current_score += 1
         else:
+            current_score += 1
             break
     return current_score
 
+
 def scenic_score(grid, y, x, row):
-    value= grid[y][x]
-    total = 1
+    tree_height = grid[y][x]
 
-    slices = [reversed(row[:x]), row[x+1:], reversed([row[x] for row in grid[:y]]), [row[x] for row in grid[y+1:]]]
+    west = reversed(row[:x])
+    east = row[x + 1 :]
+    north = reversed([row[x] for row in grid[:y]])
+    south = [row[x] for row in grid[y + 1 :]]
 
-    for score in map(slice_score, slices):
-        total *=score
-
-    return total
-
-
-
-
-for y, row in enumerate(grid):
-    for x, item in enumerate(row):
-        if y == 0 or y == y_bounds or x == 0 or x == x_bounds:
-           visible[y][x] = True
-           scores[y][x] = 0
-        elif (
-            all(tree < item for tree in row[:x])
-            or all(tree < item for tree in row[x+1:])
-            or all(tree < item for tree in [row[x] for row in grid[:y]]) 
-            or all(tree < item for tree in [row[x] for row in grid[y+1:]])
-            ):
-            visible[y][x] = True
-            scores[y][x] = scenic_score(grid, y, x, row)
-        else:
-            visible[y][x] = False
-            scores[y][x] = scenic_score(grid, y, x, row)
+    return prod(
+        starmap(
+            slice_score, ((point, tree_height) for point in (north, east, south, west))
+        )
+    )
 
 
-total = []
-for row in visible:
-    total.extend(row)
+def treehouse(grid):
+    visible = deepcopy(grid)
+    scores = deepcopy(grid)
 
-print(sum(filter(lambda x: x is True, total)))
+    x_bounds = len(grid[0]) - 1
+    y_bounds = len(grid) - 1
 
-highest_score = max(max(row) for row in scores)
-print(highest_score, sep="\n")
+    for y, row in enumerate(grid):
+        for x, height in enumerate(row):
+            if y == 0 or y == y_bounds or x == 0 or x == x_bounds:
+                visible[y][x] = True
+                scores[y][x] = 0
+            elif is_visible(grid, y, x, row, height):
+                visible[y][x] = True
+                scores[y][x] = scenic_score(grid, y, x, row)
+            else:
+                visible[y][x] = False
+    return visible, scores
+
+
+def is_visible(grid, y, x, row, height):
+    return (
+        all(tree < height for tree in row[:x])
+        or all(tree < height for tree in row[x + 1 :])
+        or all(tree < height for tree in [row[x] for row in grid[:y]])
+        or all(tree < height for tree in [row[x] for row in grid[y + 1 :]])
+    )
+
+
+if __name__ == "__main__":
+    with open("puzzle.input") as f:
+        input = f.read()
+
+    grid = [list(map(int, line.strip())) for line in input.split()]
+    visible, scores = treehouse(grid)
+
+    print("Part 1:", sum(sum(row) for row in visible))
+    print("Part 2:", max(max(row) for row in scores))
