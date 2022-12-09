@@ -8,11 +8,8 @@ defmodule Rope do
     end
   end
 
-  def move_whole_rope(rope, move_func) do
-    for knot <- rope, reduce: [] do
-      [] ->
-        [knot]
-
+  def move_whole_rope([first | rope], move_func) do
+    for knot <- rope, reduce: [first] do
       [head | _] = processed ->
         tail = move_func.(head, knot)
         [tail | processed]
@@ -25,7 +22,6 @@ defmodule Rope do
 
   def move([{headx, heady} | tail], {0, y, dir}, tail_positions) do
     # move up or down
-
     head = {headx, heady + dir}
     [tail | _] = rope = move_whole_rope([head | tail], &move_knot/2)
 
@@ -57,7 +53,7 @@ defmodule Rope do
     |> :math.sqrt()
   end
 
-  def part(instructions, num) do
+  def num_locations_visited(instructions, num) do
     rope = List.duplicate({0, 0}, num)
 
     for instruction <- instructions, reduce: {rope, MapSet.new()} do
@@ -72,13 +68,12 @@ input =
   "puzzle.input"
   |> File.read!()
   |> String.split("\n")
+  |> Enum.map(&Rope.parse_instruction/1)
 
 input
-|> Enum.map(&Rope.parse_instruction/1)
-|> Rope.part(2)
+|> Rope.num_locations_visited(2)
 |> IO.inspect(label: "Part 1")
 
 input
-|> Enum.map(&Rope.parse_instruction/1)
-|> Rope.part(10)
+|> Rope.num_locations_visited(10)
 |> IO.inspect(label: "Part 2")
