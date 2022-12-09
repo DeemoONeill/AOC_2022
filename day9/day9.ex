@@ -8,64 +8,82 @@ defmodule Rope do
     end
   end
 
-  def move(head, tail, {0, 0, _dir}, tail_positions) do
-    {head, tail, tail_positions}
+  def move_whole_rope(rope, dir, move_func) do
+    for knot <- rope, reduce: [] do
+      [] ->
+        [knot] |> IO.inspect()
+
+      [head | _] = processed ->
+        tail = move_func.(head, knot, dir)
+        [tail |> IO.inspect() | processed]
+    end
   end
 
-  def move(head, tail, {0, y, dir}, tail_positions) do
+  def move(rope, {0, 0, _dir}, tail_positions) do
+    {rope, tail_positions}
+  end
+
+  def move([{headx, heady} | tail], {0, y, dir}, tail_positions) do
     # move up or down
-    {head, tail} = move_vertical(head, tail, dir)
-    move(head, tail, {0, y - dir, dir}, [tail | tail_positions])
+    head = {headx, heady + dir}
+    [tail | _] = rope = move_whole_rope([head | tail], dir, &move_vertical/3)
+
+    move(rope |> Enum.reverse(), {0, y - dir, dir}, tail_positions |> MapSet.put(tail))
   end
 
-  def move(head, tail, {x, 0, dir}, tail_positions) do
+  def move([{headx, heady} | tail], {x, 0, dir}, tail_positions) do
     # move left or right
-    {head, tail} = move_horizontal(head, tail, dir)
-    move(head, tail, {x - dir, 0, dir}, [tail | tail_positions])
+    head = {headx + dir, heady}
+    [tail | _] = rope = move_whole_rope([head | tail], dir, &move_horizontal/3)
+    move(rope |> Enum.reverse(), {x - dir, 0, dir}, tail_positions |> MapSet.put(tail))
   end
 
-  def move_horizontal({headx, heady}, {tailx, taily} = tail, x_direction) do
-    head = {headx + x_direction, heady}
+  def move_horizontal(head, [inner], x_direction) do
+    move_horizontal(head, inner, x_direction)
+  end
 
+  def move_horizontal({_headx, heady} = head, {tailx, taily} = tail, x_direction) do
     action =
       head
       |> calculate_magnitude(tail)
 
-    tail =
-      case action do
-        :stay_put ->
-          tail
+    case action do
+      :stay_put ->
+        tail
 
-        :move ->
-          {tailx + x_direction, taily}
+      :move ->
+        {tailx + x_direction, taily}
 
-        :move_diagonally ->
-          {tailx + x_direction, heady}
-      end
+      :move_diagonally ->
+        {tailx + x_direction, heady}
 
-    {head, tail}
+      :move_towards ->
+        {tailx + x_direction, heady - x_direction}
+    end
   end
 
-  def move_vertical({headx, heady}, {tailx, taily} = tail, y_direction) do
-    head = {headx, heady + y_direction}
+  def move_vertical(head, [inner], y_direction) do
+    move_vertical(head, inner, y_direction)
+  end
 
+  def move_vertical({headx, _heady} = head, {tailx, taily} = tail, y_direction) do
     action =
       head
       |> calculate_magnitude(tail)
 
-    tail =
-      case action do
-        :stay_put ->
-          tail
+    case action do
+      :stay_put ->
+        tail
 
-        :move ->
-          {tailx, taily + y_direction}
+      :move ->
+        {tailx, taily + y_direction}
 
-        :move_diagonally ->
-          {headx, taily + y_direction}
-      end
+      :move_diagonally ->
+        {headx, taily + y_direction}
 
-    {head, tail}
+      :move_towards ->
+        {tailx + y_direction, taily + y_direction}
+    end
   end
 
   def calculate_magnitude({headx, heady}, {tailx, taily}) do
@@ -74,22 +92,39 @@ defmodule Rope do
       |> :math.sqrt()
 
     case magnitude do
-      mag when mag < 2 -> :stay_put
-      mag when mag == 2.0 -> :move
-      mag when mag > 2.0 -> :move_diagonally
+      mag when mag == 0.0 ->
+        :stay_put
+
+      mag when mag == 1.0 ->
+        :stay_put
+
+      mag when mag == 1.4142135623730951 ->
+        :stay_put
+
+      mag when mag == 2.0 ->
+        :move
+
+      mag when mag == 2.23606797749979 ->
+        :move_diagonally
+
+      mag when mag == 2.8284271247461903 ->
+        :move_diagonally
+
+      mag ->
+        :move_diagonally
     end
   end
 end
 
-_example_input =
-  "R 4
-U 4
-L 3
-D 1
-R 4
-D 1
-L 5
-R 2"
+example_input =
+  "R 5
+U 8
+L 8
+D 3
+R 17
+D 10
+L 25
+U 20"
   |> String.split("\n")
   |> Enum.map(&Rope.parse_instruction/1)
 
@@ -99,13 +134,13 @@ input =
   |> String.split("\n")
   |> Enum.map(&Rope.parse_instruction/1)
 
-head = {0, 0}
-tail = {0, 0}
+knot = {0, 0}
 
-for instruction <- input, reduce: {head, tail, []} do
-  {head, tail, rope_positions} -> Rope.move(head, tail, instruction, rope_positions)
+rope = List.duplicate(knot, 2)
+
+for instruction <- input, reduce: {rope, MapSet.new()} do
+  {rope, rope_positions} -> Rope.move(rope, instruction, rope_positions)
 end
-|> elem(2)
-|> Enum.uniq()
+|> elem(1)
 |> Enum.count()
 |> IO.inspect()
