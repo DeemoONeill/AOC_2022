@@ -1,39 +1,27 @@
 defmodule Rope do
   def parse_instruction(line) do
     case line |> String.split() do
-      ["L", num] -> {-String.to_integer(num), 0}
-      ["R", num] -> {String.to_integer(num), 0}
-      ["U", num] -> {0, String.to_integer(num)}
-      ["D", num] -> {0, -String.to_integer(num)}
+      ["L", num] -> {-String.to_integer(num), 0, -1}
+      ["R", num] -> {String.to_integer(num), 0, 1}
+      ["U", num] -> {0, String.to_integer(num), 1}
+      ["D", num] -> {0, -String.to_integer(num), -1}
     end
   end
 
-  def move(head, tail, {0, 0}, tail_positions) do
+  def move(head, tail, {0, 0, _dir}, tail_positions) do
     {head, tail, tail_positions}
   end
 
-  def move(head, tail, {0, y}, tail_positions) when y > 0 do
-    # move up
-    {head, tail} = move_vertical(head, tail, 1)
-    move(head, tail, {0, y - 1}, [tail | tail_positions])
+  def move(head, tail, {0, y, dir}, tail_positions) do
+    # move up or down
+    {head, tail} = move_vertical(head, tail, dir)
+    move(head, tail, {0, y - dir, dir}, [tail | tail_positions])
   end
 
-  def move(head, tail, {0, y}, tail_positions) when y < 0 do
-    # move down
-    {head, tail} = move_vertical(head, tail, -1)
-    move(head, tail, {0, y + 1}, [tail | tail_positions])
-  end
-
-  def move(head, tail, {x, 0}, tail_positions) when x > 0 do
-    # move right
-    {head, tail} = move_horizontal(head, tail, 1)
-    move(head, tail, {x - 1, 0}, [tail | tail_positions])
-  end
-
-  def move(head, tail, {x, 0}, tail_positions) when x < 0 do
-    # move left
-    {head, tail} = move_horizontal(head, tail, -1)
-    move(head, tail, {x + 1, 0}, [tail | tail_positions])
+  def move(head, tail, {x, 0, dir}, tail_positions) do
+    # move left or right
+    {head, tail} = move_horizontal(head, tail, dir)
+    move(head, tail, {x - dir, 0, dir}, [tail | tail_positions])
   end
 
   def move_horizontal({headx, heady}, {tailx, taily} = tail, x_direction) do
