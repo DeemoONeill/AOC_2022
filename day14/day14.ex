@@ -1,6 +1,4 @@
 defmodule Paths do
-
-
   def points([{x1, y1}, {x2, y2}]) when x1 == x2 do
     for y <- y1..y2 do
       {x1, y}
@@ -37,54 +35,71 @@ defmodule Paths do
         |> MapSet.union(acc)
     end
   end
+
   def check_below(map, {x, y}) do
-    {MapSet.member?(map, {x - 1, y + 1}), MapSet.member?(map, {x, y + 1}), MapSet.member?(map, {x + 1, y + 1})}
+    {MapSet.member?(map, {x - 1, y + 1}), MapSet.member?(map, {x, y + 1}),
+     MapSet.member?(map, {x + 1, y + 1})}
   end
 
   def sand(map, {_x, y}, max_depth) when y > max_depth, do: map
+
   def sand(map, {x, y} = starting_point, max_depth) do
-    case {check_below(map, starting_point), starting_point == {500 , 0}} do
+    case {check_below(map, starting_point), starting_point == {500, 0}} do
       {{_, false, _}, _} -> sand(map, {x, y + 1}, max_depth)
       {{true, true, true}, false} -> sand(MapSet.put(map, starting_point), {500, 0}, max_depth)
       {{true, true, true}, true} -> MapSet.put(map, starting_point)
       {{false, true, _}, _} -> sand(map, {x - 1, y}, max_depth)
       {{true, true, false}, _} -> sand(map, {x + 1, y}, max_depth)
-
     end
+  end
+
+  def size(map), do: map |> Enum.count()
+
+  def depth(map), do: map |> MapSet.to_list() |> Enum.map(&(&1 |> elem(1))) |> Enum.max()
+
+  def width(map), do: map |> MapSet.to_list() |> Enum.map(&(&1 |> elem(0))) |> Enum.max()
+
+  def cave_floor(map),
+    do:
+      points([
+        {-width(map), depth(map) + 2},
+        {width(map) * 2, depth(map) + 2}
+      ])
+      |> MapSet.new()
+      |> MapSet.union(map)
+
+  def simulate(map, pre_length) do
+    (sand(map, {500, 0}, depth(map))
+     |> MapSet.to_list()
+     |> length()) - pre_length
+  end
+
+  def part1(input) do
+    map =
+      input
+      |> Paths.get_points()
+      |> Paths.create_map()
+
+    pre_length = size(map)
+
+    simulate(map, pre_length)
+    |> IO.inspect(label: "part1")
+
+    map
+  end
+
+  def part2(map) do
+    floor_map = cave_floor(map)
+
+    pre_length = size(floor_map)
+
+    simulate(floor_map, pre_length)
+    |> IO.inspect(label: "part2")
   end
 end
 
-map =
 "puzzle.input"
 |> File.read!()
-  |> String.split("\n")
-  |> Paths.get_points()
-  |> Paths.create_map()
-
-pre_length = map |> MapSet.to_list() |> length()
-max_depth = map |> MapSet.to_list() |> Enum.map(&(&1 |> elem(1))) |> Enum.max
-
-sand = map
-|> Paths.sand({500, 0}, max_depth)
-|> MapSet.to_list()
-|> length()
-
-(sand - pre_length) |> IO.inspect(label: "Part 1")
-
-
-floor_depth = max_depth + 2
-
-maxx = map |> MapSet.to_list() |> Enum.map(&(&1 |> elem(1))) |> Enum.max()
-factor = maxx * maxx
-map = Paths.points([{-factor, floor_depth}, {factor, floor_depth}])
-|> MapSet.new()
-|> MapSet.union(map)
-
-pre_length = map |> MapSet.to_list() |> length()
-
-sand = map
-|> Paths.sand({500, 0}, max_depth + 2)
-|> MapSet.to_list()
-|> length()
-
-(sand - pre_length) |> IO.inspect(label: "Part 2")
+|> String.split("\n")
+|> Paths.part1()
+|> Paths.part2()
