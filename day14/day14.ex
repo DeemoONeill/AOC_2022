@@ -55,23 +55,22 @@ defmodule Paths do
 
   def size(map), do: map |> Enum.count()
 
-  def depth(map), do: map |> MapSet.to_list() |> Enum.map(&(&1 |> elem(1))) |> Enum.max()
+  def depth(map), do: map |> Enum.map(&(&1 |> elem(1))) |> Enum.max()
 
-  def width(map), do: map |> MapSet.to_list() |> Enum.map(&(&1 |> elem(0))) |> Enum.max()
+  def width(map), do: map |> Enum.map(&(&1 |> elem(0))) |> Enum.max()
 
   def cave_floor(map),
     do:
       points([
         {-width(map), depth(map) + 2},
-        {width(map) * 2, depth(map) + 2}
+        {width(map) + div(width(map), 2), depth(map) + 2}
       ])
       |> MapSet.new()
       |> MapSet.union(map)
 
   def simulate(map, pre_length) do
     (sand(map, {500, 0}, depth(map))
-     |> MapSet.to_list()
-     |> length()) - pre_length
+     |> Enum.count()) - pre_length
   end
 
   def part1(input) do
