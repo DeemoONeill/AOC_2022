@@ -27,9 +27,8 @@ defmodule Paths do
   def create_map(paths) do
     for path <- paths, reduce: MapSet.new() do
       acc ->
-        for point <- path do
-          Paths.points(point)
-        end
+        path
+        |> Enum.map(&points/1)
         |> List.flatten()
         |> MapSet.new()
         |> MapSet.union(acc)
@@ -46,18 +45,18 @@ defmodule Paths do
   def sand(map, {x, y} = starting_point, max_depth) do
     case {check_below(map, starting_point), starting_point == {500, 0}} do
       {{_, false, _}, _} -> sand(map, {x, y + 1}, max_depth)
-      {{true, true, true}, false} -> sand(MapSet.put(map, starting_point), {500, 0}, max_depth)
-      {{true, true, true}, true} -> MapSet.put(map, starting_point)
       {{false, true, _}, _} -> sand(map, {x - 1, y}, max_depth)
       {{true, true, false}, _} -> sand(map, {x + 1, y}, max_depth)
+      {{true, true, true}, false} -> sand(MapSet.put(map, starting_point), {500, 0}, max_depth)
+      {{true, true, true}, true} -> MapSet.put(map, starting_point)
     end
   end
 
   def size(map), do: map |> Enum.count()
 
-  def depth(map), do: map |> Enum.map(&(&1 |> elem(1))) |> Enum.max()
+  def depth(map), do: map |> Stream.map(&(&1 |> elem(1))) |> Enum.max()
 
-  def width(map), do: map |> Enum.map(&(&1 |> elem(0))) |> Enum.max()
+  def width(map), do: map |> Stream.map(&(&1 |> elem(0))) |> Enum.max()
 
   def cave_floor(map),
     do:
